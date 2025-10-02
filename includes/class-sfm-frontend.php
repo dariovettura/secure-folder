@@ -36,6 +36,9 @@ class SFM_Frontend {
         
         // Enqueue frontend styles
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_styles'));
+        
+        // Block wp-admin access for custom roles
+        add_action('admin_init', array($this, 'block_custom_roles_from_admin'));
     }
     
     /**
@@ -48,6 +51,33 @@ class SFM_Frontend {
             array(),
             SFM_PLUGIN_VERSION
         );
+    }
+    
+    /**
+     * Block custom roles from accessing wp-admin
+     */
+    public function block_custom_roles_from_admin() {
+        if (!is_user_logged_in()) {
+            return;
+        }
+        
+        $user = wp_get_current_user();
+        $user_roles = $user->roles;
+        
+        // Check if user has only custom roles (no standard WordPress roles except subscriber)
+        $has_admin_access = false;
+        foreach ($user_roles as $role) {
+            if (in_array($role, array('administrator', 'editor', 'author', 'contributor'))) {
+                $has_admin_access = true;
+                break;
+            }
+        }
+        
+        // If user has no admin access and is trying to access wp-admin, redirect them
+        if (!$has_admin_access && is_admin() && !wp_doing_ajax()) {
+            wp_redirect(home_url());
+            exit;
+        }
     }
     
     /**

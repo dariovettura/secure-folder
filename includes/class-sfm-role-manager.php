@@ -85,7 +85,7 @@ class SFM_Role_Manager {
             return array('success' => false, 'message' => 'Custom role already exists');
         }
         
-        // Create WordPress role with only view and download capabilities
+        // Create WordPress role with only view and download capabilities (no wp-admin access)
         $wp_role = add_role($role_name, $display_name, array(
             'read' => true,
             'sfm_view_secure_files' => true,
