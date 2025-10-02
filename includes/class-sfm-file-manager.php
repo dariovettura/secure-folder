@@ -239,6 +239,42 @@ class SFM_File_Manager {
     }
     
     /**
+     * Handle file roles update via AJAX
+     */
+    public function handle_update_file_roles() {
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['nonce'], 'sfm_admin_nonce')) {
+            wp_die('Security check failed');
+        }
+        
+        // Check permissions - only administrators can update file roles
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions - only administrators can update file roles');
+        }
+        
+        $file_id = intval($_POST['file_id']);
+        $allowed_roles = isset($_POST['allowed_roles']) ? array_map('sanitize_text_field', $_POST['allowed_roles']) : array();
+        
+        // Update file roles in database
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sfm_files';
+        
+        $result = $wpdb->update(
+            $table_name,
+            array('allowed_roles' => serialize($allowed_roles)),
+            array('id' => $file_id),
+            array('%s'),
+            array('%d')
+        );
+        
+        if ($result !== false) {
+            wp_send_json_success('File roles updated successfully');
+        } else {
+            wp_send_json_error('Failed to update file roles');
+        }
+    }
+    
+    /**
      * Handle file access control
      */
     public function handle_file_access() {

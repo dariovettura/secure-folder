@@ -209,8 +209,10 @@ class SFM_Admin {
      * Render upload page
      */
     private function render_upload_page() {
-        // Get all WordPress roles (including custom roles created by the plugin)
-        $wp_roles = wp_roles()->get_names();
+        // Get only custom roles created by the plugin
+        global $wpdb;
+        $custom_roles_table = $wpdb->prefix . 'sfm_custom_roles';
+        $custom_roles = $wpdb->get_results("SELECT role_name, role_display_name FROM $custom_roles_table WHERE is_active = 1");
         
         ?>
         <div class="wrap">
@@ -247,16 +249,20 @@ class SFM_Admin {
                             <fieldset>
                                 <legend class="screen-reader-text">Allowed Roles</legend>
                                 
-                                <h4>WordPress Roles:</h4>
-                                <?php foreach ($wp_roles as $role_name => $role_display_name): ?>
-                                    <label>
-                                        <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role_name); ?>">
-                                        <?php echo esc_html($role_display_name); ?>
-                                    </label><br>
-                                <?php endforeach; ?>
+                                <?php if (empty($custom_roles)): ?>
+                                    <p>No custom roles available. <a href="<?php echo admin_url('admin.php?page=secure-files-roles&action=add'); ?>">Create a custom role</a> first.</p>
+                                <?php else: ?>
+                                    <h4>Custom Roles:</h4>
+                                    <?php foreach ($custom_roles as $role): ?>
+                                        <label>
+                                            <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role->role_name); ?>">
+                                            <?php echo esc_html($role->role_display_name); ?>
+                                        </label><br>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                                 
                                 <p class="description">
-                                    Select which roles can access this file. If no roles are selected, only administrators can access it.
+                                    Select which custom roles can access this file. If no roles are selected, only administrators can access it.
                                 </p>
                             </fieldset>
                         </td>
@@ -293,8 +299,11 @@ class SFM_Admin {
             wp_die('File not found');
         }
         
-        // Get all WordPress roles (including custom roles created by the plugin)
-        $wp_roles = wp_roles()->get_names();
+        // Get only custom roles created by the plugin
+        global $wpdb;
+        $custom_roles_table = $wpdb->prefix . 'sfm_custom_roles';
+        $custom_roles = $wpdb->get_results("SELECT role_name, role_display_name FROM $custom_roles_table WHERE is_active = 1");
+        
         $allowed_roles = unserialize($file->allowed_roles);
         
         ?>
@@ -341,14 +350,18 @@ class SFM_Admin {
                             <fieldset>
                                 <legend class="screen-reader-text">Allowed Roles</legend>
                                 
-                                <h4>WordPress Roles:</h4>
-                                <?php foreach ($wp_roles as $role_name => $role_display_name): ?>
-                                    <label>
-                                        <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role_name); ?>" 
-                                               <?php checked(in_array($role_name, $allowed_roles)); ?>>
-                                        <?php echo esc_html($role_display_name); ?>
-                                    </label><br>
-                                <?php endforeach; ?>
+                                <?php if (empty($custom_roles)): ?>
+                                    <p>No custom roles available. <a href="<?php echo admin_url('admin.php?page=secure-files-roles&action=add'); ?>">Create a custom role</a> first.</p>
+                                <?php else: ?>
+                                    <h4>Custom Roles:</h4>
+                                    <?php foreach ($custom_roles as $role): ?>
+                                        <label>
+                                            <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role->role_name); ?>" 
+                                                   <?php checked(in_array($role->role_name, $allowed_roles)); ?>>
+                                            <?php echo esc_html($role->role_display_name); ?>
+                                        </label><br>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </fieldset>
                         </td>
                     </tr>
