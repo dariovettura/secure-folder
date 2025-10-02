@@ -193,15 +193,26 @@ class SFM_Frontend {
                 e.preventDefault();
                 var fileId = $(this).data('file-id');
                 var nonce = '<?php echo wp_create_nonce('sfm_nonce'); ?>';
+                var btn = $(this);
+                
+                // Show loading state
+                btn.text('Downloading...').prop('disabled', true);
                 
                 // Create form and submit
-                var form = $('<form method="post" action="<?php echo admin_url('admin-ajax.php'); ?>">');
+                var form = $('<form method="post" action="<?php echo admin_url('admin-ajax.php'); ?>" style="display:none;">');
                 form.append($('<input type="hidden" name="action" value="sfm_download_file">'));
                 form.append($('<input type="hidden" name="file_id" value="' + fileId + '">'));
                 form.append($('<input type="hidden" name="nonce" value="' + nonce + '">'));
                 $('body').append(form);
+                
+                // Submit form
                 form.submit();
-                form.remove();
+                
+                // Reset button after a delay
+                setTimeout(function() {
+                    btn.text('Download').prop('disabled', false);
+                    form.remove();
+                }, 3000);
             });
         });
         </script>
@@ -285,6 +296,9 @@ class SFM_Frontend {
         
         $file_id = intval($_POST['file_id']);
         
+        // Debug: Log the request
+        error_log('SFM Download Request - File ID: ' . $file_id . ', User: ' . get_current_user_id());
+        
         // Get file info
         global $wpdb;
         $table_name = $wpdb->prefix . 'sfm_files';
@@ -294,18 +308,45 @@ class SFM_Frontend {
         ));
         
         if (!$file) {
+            error_log('SFM Download Error - File not found in database: ' . $file_id);
             wp_die('File not found');
         }
         
+        // Debug: Log file info
+        error_log('SFM Download - File found: ' . $file->filename . ', User roles: ' . print_r(wp_get_current_user()->roles, true));
+        
         // Check access permissions
         if (!$this->user_can_access_file($file)) {
+            error_log('SFM Download Error - Access denied for file: ' . $file->filename);
             wp_die('Access denied');
         }
         
-        // Generate download URL
-        $download_url = $this->generate_download_url($file);
+        // Update download count
+        $wpdb->query($wpdb->prepare(
+            "UPDATE $table_name SET download_count = download_count + 1 WHERE id = %d",
+            $file_id
+        ));
         
-        wp_send_json_success(array('download_url' => $download_url));
+        // Serve the file directly
+        $file_path = SFM_PROTECTED_PATH . '/' . $file->filename;
+        
+        error_log('SFM Download - File path: ' . $file_path . ', Exists: ' . (file_exists($file_path) ? 'Yes' : 'No'));
+        
+        if (!file_exists($file_path)) {
+            error_log('SFM Download Error - File not found on disk: ' . $file_path);
+            wp_die('File not found on disk');
+        }
+        
+        // Set headers for file download
+        header('Content-Type: ' . $file->mime_type);
+        header('Content-Disposition: attachment; filename="' . $file->original_name . '"');
+        header('Content-Length: ' . filesize($file_path));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: no-cache');
+        
+        // Output file content
+        readfile($file_path);
+        exit;
     }
     
     /**
