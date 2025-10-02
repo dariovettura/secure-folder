@@ -1,0 +1,345 @@
+/* Admin Styles for Secure Files Manager */
+
+.sfm-admin-files,
+.sfm-admin-roles {
+    margin-top: 20px;
+}
+
+.sfm-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.sfm-empty-state h3 {
+    margin-top: 0;
+    color: #666;
+}
+
+.sfm-file-item {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #fff;
+}
+
+.sfm-file-item:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.sfm-file-actions {
+    margin-top: 10px;
+}
+
+.sfm-file-actions .button {
+    margin-right: 5px;
+}
+
+/* Role management styles */
+.sfm-role-item {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background: #fff;
+}
+
+.sfm-role-capabilities {
+    margin-top: 10px;
+}
+
+.sfm-role-capabilities label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* Settings page styles */
+.sfm-settings-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.sfm-settings-section h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* File upload area */
+.sfm-upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 4px;
+    padding: 40px;
+    text-align: center;
+    background: #fafafa;
+    transition: border-color 0.3s ease;
+}
+
+.sfm-upload-area:hover {
+    border-color: #0073aa;
+}
+
+.sfm-upload-area.dragover {
+    border-color: #0073aa;
+    background: #f0f8ff;
+}
+
+/* Progress bar */
+.sfm-progress {
+    width: 100%;
+    height: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.sfm-progress-bar {
+    height: 100%;
+    background: #0073aa;
+    transition: width 0.3s ease;
+}
+
+/* Notices */
+.sfm-notice {
+    padding: 12px;
+    margin: 15px 0;
+    border-left: 4px solid #0073aa;
+    background: #f0f8ff;
+}
+
+.sfm-notice.error {
+    border-left-color: #dc3232;
+    background: #fef7f7;
+}
+
+.sfm-notice.success {
+    border-left-color: #46b450;
+    background: #f7fef7;
+}
+
+.sfm-notice.warning {
+    border-left-color: #ffb900;
+    background: #fffbf0;
+}
+
+/* File type icons */
+.sfm-file-icon {
+    font-size: 24px;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+/* Responsive tables */
+@media (max-width: 768px) {
+    .wp-list-table {
+        font-size: 12px;
+    }
+    
+    .wp-list-table th,
+    .wp-list-table td {
+        padding: 8px 4px;
+    }
+}
+
+/* Custom role form */
+.sfm-role-form .form-table th {
+    width: 200px;
+}
+
+.sfm-role-form .form-table td {
+    padding: 15px 10px;
+}
+
+/* File management dashboard widget */
+.sfm-dashboard-widget {
+    padding: 0;
+}
+
+.sfm-dashboard-widget .inside {
+    margin: 0;
+    padding: 0;
+}
+
+.sfm-dashboard-widget .sfm-stats {
+    display: flex;
+    justify-content: space-around;
+    background: #f9f9f9;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.sfm-dashboard-widget .sfm-stat {
+    text-align: center;
+}
+
+.sfm-dashboard-widget .sfm-stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0073aa;
+}
+
+.sfm-dashboard-widget .sfm-stat-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+/* File list in dashboard */
+.sfm-dashboard-files {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.sfm-dashboard-file {
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sfm-dashboard-file:last-child {
+    border-bottom: none;
+}
+
+.sfm-dashboard-file-name {
+    font-weight: 500;
+}
+
+.sfm-dashboard-file-meta {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Loading states */
+.sfm-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.sfm-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0073aa;
+    border-radius: 50%;
+    animation: sfm-spin 1s linear infinite;
+}
+
+@keyframes sfm-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Button styles */
+.sfm-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #0073aa;
+    color: white;
+    text-decoration: none;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.sfm-button:hover {
+    background: #005a87;
+    color: white;
+}
+
+.sfm-button.secondary {
+    background: #f1f1f1;
+    color: #555;
+}
+
+.sfm-button.secondary:hover {
+    background: #e1e1e1;
+}
+
+.sfm-button.danger {
+    background: #dc3232;
+}
+
+.sfm-button.danger:hover {
+    background: #c62d2d;
+}
+
+/* Form styles */
+.sfm-form-group {
+    margin-bottom: 20px;
+}
+
+.sfm-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.sfm-form-group input,
+.sfm-form-group textarea,
+.sfm-form-group select {
+    width: 100%;
+    max-width: 400px;
+}
+
+.sfm-form-group .description {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* Checkbox groups */
+.sfm-checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.sfm-checkbox-group label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    margin-bottom: 0;
+}
+
+.sfm-checkbox-group input[type="checkbox"] {
+    margin-right: 8px;
+    width: auto;
+}
+
+/* Status indicators */
+.sfm-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.sfm-status.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.sfm-status.inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.sfm-status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
