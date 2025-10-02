@@ -39,6 +39,9 @@ class SFM_Frontend {
         
         // Block wp-admin access for custom roles
         add_action('admin_init', array($this, 'block_custom_roles_from_admin'));
+        
+        // Hide admin bar for custom roles
+        add_action('after_setup_theme', array($this, 'hide_admin_bar_for_custom_roles'));
     }
     
     /**
@@ -77,6 +80,32 @@ class SFM_Frontend {
         if (!$has_admin_access && is_admin() && !wp_doing_ajax()) {
             wp_redirect(home_url());
             exit;
+        }
+    }
+    
+    /**
+     * Hide admin bar for custom roles
+     */
+    public function hide_admin_bar_for_custom_roles() {
+        if (!is_user_logged_in()) {
+            return;
+        }
+        
+        $user = wp_get_current_user();
+        $user_roles = $user->roles;
+        
+        // Check if user has only custom roles (no standard WordPress roles)
+        $has_admin_access = false;
+        foreach ($user_roles as $role) {
+            if (in_array($role, array('administrator', 'editor', 'author', 'contributor'))) {
+                $has_admin_access = true;
+                break;
+            }
+        }
+        
+        // If user has no admin access, hide the admin bar
+        if (!$has_admin_access) {
+            show_admin_bar(false);
         }
     }
     
