@@ -27,16 +27,7 @@ class SFM_Role_Manager {
         add_action('wp_ajax_sfm_update_custom_role', array($this, 'handle_update_custom_role'));
         add_action('wp_ajax_sfm_delete_custom_role', array($this, 'handle_delete_custom_role'));
         
-        // User registration hooks
-        add_action('user_register', array($this, 'handle_user_registration'));
-        add_action('show_user_profile', array($this, 'add_custom_role_fields'));
-        add_action('edit_user_profile', array($this, 'add_custom_role_fields'));
-        add_action('personal_options_update', array($this, 'save_custom_role_fields'));
-        add_action('edit_user_profile_update', array($this, 'save_custom_role_fields'));
-        
-        // Add custom roles to user registration form
-        add_action('register_form', array($this, 'add_registration_fields'));
-        add_action('user_register', array($this, 'handle_registration_custom_role'));
+        // User registration hooks (removed - custom roles are managed through WordPress standard role system)
     }
     
     /**
@@ -48,9 +39,9 @@ class SFM_Role_Manager {
             wp_die('Security check failed');
         }
         
-        // Check permissions
-        if (!current_user_can('sfm_manage_roles') && !current_user_can('manage_options')) {
-            wp_die('Insufficient permissions');
+        // Check permissions - only administrators can manage roles
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions - only administrators can manage roles');
         }
         
         $role_name = sanitize_text_field($_POST['role_name']);
@@ -94,27 +85,26 @@ class SFM_Role_Manager {
             return array('success' => false, 'message' => 'Custom role already exists');
         }
         
-        // Create WordPress role
+        // Create WordPress role with only view and download capabilities
         $wp_role = add_role($role_name, $display_name, array(
             'read' => true,
-            'sfm_view_secure_files' => true
+            'sfm_view_secure_files' => true,
+            'sfm_download_files' => true
         ));
         
         if (!$wp_role) {
             return array('success' => false, 'message' => 'Failed to create WordPress role');
         }
         
-        // Add custom capabilities
-        foreach ($capabilities as $cap) {
-            $wp_role->add_cap($cap);
-        }
+        // Custom roles only get view and download capabilities - no additional capabilities needed
         
-        // Save to database
+        // Save to database with limited capabilities
+        $limited_capabilities = array('sfm_view_secure_files', 'sfm_download_files');
         $result = $wpdb->insert($table_name, array(
             'role_name' => $role_name,
             'role_display_name' => $display_name,
             'role_description' => $description,
-            'capabilities' => serialize($capabilities),
+            'capabilities' => serialize($limited_capabilities),
             'created_by' => get_current_user_id()
         ));
         
@@ -136,9 +126,9 @@ class SFM_Role_Manager {
             wp_die('Security check failed');
         }
         
-        // Check permissions
-        if (!current_user_can('sfm_manage_roles') && !current_user_can('manage_options')) {
-            wp_die('Insufficient permissions');
+        // Check permissions - only administrators can manage roles
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions - only administrators can manage roles');
         }
         
         $role_id = intval($_POST['role_id']);
@@ -173,7 +163,7 @@ class SFM_Role_Manager {
             return array('success' => false, 'message' => 'Role not found');
         }
         
-        // Update WordPress role
+        // Update WordPress role - custom roles always have limited capabilities
         $wp_role = get_role($role->role_name);
         if ($wp_role) {
             // Remove old capabilities
@@ -182,19 +172,21 @@ class SFM_Role_Manager {
                 $wp_role->remove_cap($cap);
             }
             
-            // Add new capabilities
-            foreach ($capabilities as $cap) {
+            // Add only view and download capabilities
+            $limited_capabilities = array('sfm_view_secure_files', 'sfm_download_files');
+            foreach ($limited_capabilities as $cap) {
                 $wp_role->add_cap($cap);
             }
         }
         
-        // Update database
+        // Update database with limited capabilities
+        $limited_capabilities = array('sfm_view_secure_files', 'sfm_download_files');
         $result = $wpdb->update(
             $table_name,
             array(
                 'role_display_name' => $display_name,
                 'role_description' => $description,
-                'capabilities' => serialize($capabilities)
+                'capabilities' => serialize($limited_capabilities)
             ),
             array('id' => $role_id)
         );
@@ -215,9 +207,9 @@ class SFM_Role_Manager {
             wp_die('Security check failed');
         }
         
-        // Check permissions
-        if (!current_user_can('sfm_manage_roles') && !current_user_can('manage_options')) {
-            wp_die('Insufficient permissions');
+        // Check permissions - only administrators can manage roles
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions - only administrators can manage roles');
         }
         
         $role_id = intval($_POST['role_id']);
@@ -280,115 +272,9 @@ class SFM_Role_Manager {
         );
     }
     
-    /**
-     * Add custom role fields to user profile
-     */
-    public function add_custom_role_fields($user) {
-        $custom_roles = $this->get_custom_roles();
-        
-        if (empty($custom_roles)) {
-            return;
-        }
-        
-        echo '<h3>Secure Files Access</h3>';
-        echo '<table class="form-table">';
-        echo '<tr>';
-        echo '<th><label for="sfm_custom_roles">Additional File Access Roles</label></th>';
-        echo '<td>';
-        
-        $user_custom_roles = get_user_meta($user->ID, 'sfm_custom_roles', true);
-        if (!is_array($user_custom_roles)) {
-            $user_custom_roles = array();
-        }
-        
-        foreach ($custom_roles as $role) {
-            $checked = in_array($role->role_name, $user_custom_roles) ? 'checked' : '';
-            echo '<label>';
-            echo '<input type="checkbox" name="sfm_custom_roles[]" value="' . esc_attr($role->role_name) . '" ' . $checked . '> ';
-            echo esc_html($role->role_display_name);
-            if (!empty($role->role_description)) {
-                echo ' - ' . esc_html($role->role_description);
-            }
-            echo '</label><br>';
-        }
-        
-        echo '<p class="description">Select additional roles for file access.</p>';
-        echo '</td>';
-        echo '</tr>';
-        echo '</table>';
-    }
+    // Removed custom profile fields - custom roles are managed through WordPress standard role system
     
-    /**
-     * Save custom role fields
-     */
-    public function save_custom_role_fields($user_id) {
-        if (!current_user_can('edit_user', $user_id)) {
-            return false;
-        }
-        
-        $custom_roles = isset($_POST['sfm_custom_roles']) ? array_map('sanitize_text_field', $_POST['sfm_custom_roles']) : array();
-        update_user_meta($user_id, 'sfm_custom_roles', $custom_roles);
-    }
-    
-    /**
-     * Add custom roles to registration form
-     */
-    public function add_registration_fields() {
-        $custom_roles = $this->get_custom_roles();
-        
-        if (empty($custom_roles)) {
-            return;
-        }
-        
-        echo '<p>';
-        echo '<label for="sfm_custom_roles">Additional File Access Roles (Optional)<br>';
-        
-        foreach ($custom_roles as $role) {
-            echo '<label>';
-            echo '<input type="checkbox" name="sfm_custom_roles[]" value="' . esc_attr($role->role_name) . '"> ';
-            echo esc_html($role->role_display_name);
-            if (!empty($role->role_description)) {
-                echo ' - ' . esc_html($role->role_description);
-            }
-            echo '</label><br>';
-        }
-        
-        echo '</label>';
-        echo '</p>';
-    }
-    
-    /**
-     * Handle custom role assignment during registration
-     */
-    public function handle_registration_custom_role($user_id) {
-        if (isset($_POST['sfm_custom_roles']) && is_array($_POST['sfm_custom_roles'])) {
-            $custom_roles = array_map('sanitize_text_field', $_POST['sfm_custom_roles']);
-            update_user_meta($user_id, 'sfm_custom_roles', $custom_roles);
-        }
-    }
-    
-    /**
-     * Handle user registration
-     */
-    public function handle_user_registration($user_id) {
-        // This is called after user registration
-        // Custom roles are handled in handle_registration_custom_role
-    }
-    
-    /**
-     * Check if user has custom role
-     */
-    public function user_has_custom_role($user_id, $role_name) {
-        $user_custom_roles = get_user_meta($user_id, 'sfm_custom_roles', true);
-        return is_array($user_custom_roles) && in_array($role_name, $user_custom_roles);
-    }
-    
-    /**
-     * Get user's custom roles
-     */
-    public function get_user_custom_roles($user_id) {
-        return get_user_meta($user_id, 'sfm_custom_roles', true);
-    }
+    // Removed custom role meta management - using WordPress standard role system
     
     /**
      * Get available capabilities for custom roles
@@ -396,10 +282,7 @@ class SFM_Role_Manager {
     public function get_available_capabilities() {
         return array(
             'sfm_view_secure_files' => 'View Secure Files',
-            'sfm_download_files' => 'Download Files',
-            'sfm_upload_files' => 'Upload Files',
-            'sfm_manage_files' => 'Manage Files',
-            'sfm_manage_roles' => 'Manage Roles'
+            'sfm_download_files' => 'Download Files'
         );
     }
 }

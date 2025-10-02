@@ -38,6 +38,18 @@
     margin-right: 5px;
 }
 
+.sfm-file-actions .button[href*="View"] {
+    background: #46b450;
+    border-color: #46b450;
+    color: white;
+}
+
+.sfm-file-actions .button[href*="View"]:hover {
+    background: #3a9e3d;
+    border-color: #3a9e3d;
+    color: white;
+}
+
 /* Role management styles */
 .sfm-role-item {
     border: 1px solid #ddd;

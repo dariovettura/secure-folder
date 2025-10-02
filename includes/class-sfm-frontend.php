@@ -29,6 +29,11 @@ class SFM_Frontend {
         add_action('wp_ajax_sfm_download_file', array($this, 'handle_file_download'));
         add_action('wp_ajax_nopriv_sfm_download_file', array($this, 'handle_file_download'));
         
+        // Add rewrite rule for secure file access
+        add_action('init', array($this, 'add_rewrite_rules'));
+        add_filter('query_vars', array($this, 'add_query_vars'));
+        add_action('template_redirect', array($this, 'handle_secure_file_access'));
+        
         // Add custom page template
         add_filter('page_template', array($this, 'custom_page_template'));
         
@@ -189,12 +194,8 @@ class SFM_Frontend {
         $table_name = $wpdb->prefix . 'sfm_files';
         $user = wp_get_current_user();
         
-        // Build query based on user roles
+        // Build query based on user roles (WordPress standard roles only)
         $user_roles = $user->roles;
-        $user_custom_roles = get_user_meta($user->ID, 'sfm_custom_roles', true);
-        if (is_array($user_custom_roles)) {
-            $user_roles = array_merge($user_roles, $user_custom_roles);
-        }
         
         // Admin can see all files (only real administrators, not custom roles)
         if (current_user_can('sfm_manage_files') || (current_user_can('manage_options') && in_array('administrator', $user_roles))) {
@@ -205,24 +206,23 @@ class SFM_Frontend {
             return $wpdb->get_results($query);
         }
         
-        // Build role condition
-        $role_conditions = array();
-        foreach ($user_roles as $role) {
-            $role_conditions[] = $wpdb->prepare("allowed_roles LIKE %s", '%' . $role . '%');
-        }
-        
-        if (empty($role_conditions)) {
-            return array();
-        }
-        
-        $role_condition = '(' . implode(' OR ', $role_conditions) . ')';
-        
-        $query = "SELECT * FROM $table_name WHERE $role_condition ORDER BY uploaded_at DESC";
+        // Get all files and filter by roles in PHP for better security
+        $query = "SELECT * FROM $table_name ORDER BY uploaded_at DESC";
         if (!empty($atts['limit'])) {
             $query .= " LIMIT " . intval($atts['limit']);
         }
         
-        return $wpdb->get_results($query);
+        $all_files = $wpdb->get_results($query);
+        
+        // Filter files by user roles
+        $accessible_files = array();
+        foreach ($all_files as $file) {
+            if ($this->user_can_access_file($file)) {
+                $accessible_files[] = $file;
+            }
+        }
+        
+        return $accessible_files;
     }
     
     /**
@@ -303,21 +303,98 @@ class SFM_Frontend {
             return current_user_can('sfm_manage_files') || (current_user_can('manage_options') && in_array('administrator', $user_roles));
         }
         
-        // Check if user has one of the allowed roles
-        $user_roles = $user->roles;
-        $user_custom_roles = get_user_meta($user->ID, 'sfm_custom_roles', true);
-        if (is_array($user_custom_roles)) {
-            $user_roles = array_merge($user_roles, $user_custom_roles);
-        }
-        
-        // Check if user has any of the allowed roles
-        foreach ($allowed_roles as $role) {
-            if (in_array($role, $user_roles)) {
+        // Check if user has any of the allowed roles (exact match)
+        foreach ($allowed_roles as $allowed_role) {
+            if (in_array($allowed_role, $user_roles)) {
                 return true;
             }
         }
-        
         return false;
+    }
+    
+    /**
+     * Add rewrite rules for secure file access
+     */
+    public function add_rewrite_rules() {
+        add_rewrite_rule(
+            '^secure-files/([^/]+)/?$',
+            'index.php?sfm_secure_file=1&sfm_file_name=$matches[1]',
+            'top'
+        );
+    }
+    
+    /**
+     * Add query vars for secure file access
+     */
+    public function add_query_vars($vars) {
+        $vars[] = 'sfm_secure_file';
+        $vars[] = 'sfm_file_name';
+        $vars[] = 'sfm_download';
+        return $vars;
+    }
+    
+    /**
+     * Handle secure file access
+     */
+    public function handle_secure_file_access() {
+        if (get_query_var('sfm_secure_file')) {
+            $file_name = get_query_var('sfm_file_name');
+            $this->serve_secure_file($file_name);
+            exit;
+        }
+    }
+    
+    /**
+     * Serve secure file with role checking
+     */
+    private function serve_secure_file($file_name) {
+        global $wpdb;
+        
+        // Check if user is logged in
+        if (!is_user_logged_in()) {
+            wp_die('Access denied - please log in', 'Access Denied', array('response' => 403));
+        }
+        
+        // Get file from database
+        $table_name = $wpdb->prefix . 'sfm_files';
+        $file = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE filename = %s",
+            $file_name
+        ));
+        
+        if (!$file) {
+            wp_die('File not found', 'File Not Found', array('response' => 404));
+        }
+        
+        // Check if user can access this file
+        if (!$this->user_can_access_file($file)) {
+            wp_die('Access denied - insufficient permissions', 'Access Denied', array('response' => 403));
+        }
+        
+        // Serve the file
+        $file_path = SFM_PROTECTED_PATH . '/' . $file->filename;
+        
+        if (!file_exists($file_path)) {
+            wp_die('File not found on disk', 'File Not Found', array('response' => 404));
+        }
+        
+        // Set headers for file download
+        header('Content-Type: ' . $file->mime_type);
+        header('Content-Disposition: inline; filename="' . $file->original_name . '"');
+        header('Content-Length: ' . filesize($file_path));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('Pragma: no-cache');
+        
+        // Output file content
+        readfile($file_path);
+        exit;
+    }
+    
+    /**
+     * Generate secure file URL for viewing
+     */
+    public function get_file_view_url($file) {
+        return home_url('/secure-files/' . $file->filename);
     }
     
     /**
@@ -331,13 +408,6 @@ class SFM_Frontend {
         ), home_url());
     }
     
-    /**
-     * Add custom query vars
-     */
-    public function add_query_vars($vars) {
-        $vars[] = 'sfm_download';
-        return $vars;
-    }
     
     /**
      * Handle custom page requests

@@ -29,6 +29,9 @@ class SFM_Activator {
         
         // Set default options
         self::set_default_options();
+        
+        // Flush rewrite rules
+        flush_rewrite_rules();
     }
     
     /**

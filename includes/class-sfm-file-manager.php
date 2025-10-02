@@ -51,9 +51,9 @@ class SFM_File_Manager {
             wp_die('Security check failed');
         }
         
-        // Check permissions
-        if (!current_user_can('sfm_upload_files') && !current_user_can('manage_options')) {
-            wp_die('Insufficient permissions');
+        // Check permissions - only administrators can upload files
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions - only administrators can upload files');
         }
         
         // Handle file upload
@@ -190,9 +190,9 @@ class SFM_File_Manager {
             wp_die('Security check failed');
         }
         
-        // Check permissions
-        if (!current_user_can('sfm_manage_files') && !current_user_can('manage_options')) {
-            wp_die('Insufficient permissions');
+        // Check permissions - only administrators can delete files
+        if (!current_user_can('manage_options')) {
+            wp_die('Insufficient permissions - only administrators can delete files');
         }
         
         $file_id = intval($_POST['file_id']);
@@ -305,18 +305,12 @@ class SFM_File_Manager {
             return current_user_can('sfm_manage_files') || (current_user_can('manage_options') && in_array('administrator', $user_roles));
         }
         
-        // Check if user has one of the allowed roles
-        $user_custom_roles = get_user_meta($user->ID, 'sfm_custom_roles', true);
-        if (is_array($user_custom_roles)) {
-            $user_roles = array_merge($user_roles, $user_custom_roles);
-        }
-        
-        foreach ($allowed_roles as $role) {
-            if (in_array($role, $user_roles)) {
+        // Check if user has one of the allowed roles (exact match)
+        foreach ($allowed_roles as $allowed_role) {
+            if (in_array($allowed_role, $user_roles)) {
                 return true;
             }
         }
-        
         return false;
     }
     
@@ -412,6 +406,7 @@ class SFM_File_Manager {
                 echo '<td>' . date('Y-m-d H:i', strtotime($file->uploaded_at)) . '</td>';
                 echo '<td>' . $file->download_count . '</td>';
                 echo '<td>';
+                echo '<a href="' . $this->get_file_view_url($file) . '" class="button button-small" target="_blank">View</a> ';
                 echo '<a href="' . admin_url('admin.php?page=secure-files-manager&action=edit&file_id=' . $file->id) . '" class="button button-small">Edit</a> ';
                 echo '<button class="button button-small sfm-delete-file" data-file-id="' . $file->id . '">Delete</button>';
                 echo '</td>';
@@ -422,5 +417,13 @@ class SFM_File_Manager {
         }
         
         echo '</div>';
+    }
+    
+    /**
+     * Get file view URL
+     */
+    private function get_file_view_url($file) {
+        $frontend = SFM_Core::instance()->get_frontend();
+        return $frontend->get_file_view_url($file);
     }
 }

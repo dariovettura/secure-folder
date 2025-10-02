@@ -185,6 +185,9 @@ class SFM_Admin {
                                         ?>
                                     </td>
                                     <td>
+                                        <a href="<?php echo $this->get_file_view_url($file); ?>" class="button button-small" target="_blank">
+                                            View
+                                        </a>
                                         <a href="<?php echo admin_url('admin.php?page=secure-files-manager&action=edit&file_id=' . $file->id); ?>" class="button button-small">
                                             Edit
                                         </a>
@@ -206,8 +209,7 @@ class SFM_Admin {
      * Render upload page
      */
     private function render_upload_page() {
-        $role_manager = SFM_Core::instance()->get_role_manager();
-        $custom_roles = $role_manager->get_custom_roles();
+        // Get all WordPress roles (including custom roles created by the plugin)
         $wp_roles = wp_roles()->get_names();
         
         ?>
@@ -245,17 +247,13 @@ class SFM_Admin {
                             <fieldset>
                                 <legend class="screen-reader-text">Allowed Roles</legend>
                                 
-                              
-                                
-                                <?php if (!empty($custom_roles)): ?>
-                                    <h4>Roles:</h4>
-                                    <?php foreach ($custom_roles as $role): ?>
-                                        <label>
-                                            <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role->role_name); ?>">
-                                            <?php echo esc_html($role->role_display_name); ?>
-                                        </label><br>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                                <h4>WordPress Roles:</h4>
+                                <?php foreach ($wp_roles as $role_name => $role_display_name): ?>
+                                    <label>
+                                        <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role_name); ?>">
+                                        <?php echo esc_html($role_display_name); ?>
+                                    </label><br>
+                                <?php endforeach; ?>
                                 
                                 <p class="description">
                                     Select which roles can access this file. If no roles are selected, only administrators can access it.
@@ -295,8 +293,7 @@ class SFM_Admin {
             wp_die('File not found');
         }
         
-        $role_manager = SFM_Core::instance()->get_role_manager();
-        $custom_roles = $role_manager->get_custom_roles();
+        // Get all WordPress roles (including custom roles created by the plugin)
         $wp_roles = wp_roles()->get_names();
         $allowed_roles = unserialize($file->allowed_roles);
         
@@ -352,17 +349,6 @@ class SFM_Admin {
                                         <?php echo esc_html($role_display_name); ?>
                                     </label><br>
                                 <?php endforeach; ?>
-                                
-                                <?php if (!empty($custom_roles)): ?>
-                                    <h4>Custom Roles:</h4>
-                                    <?php foreach ($custom_roles as $role): ?>
-                                        <label>
-                                            <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role->role_name); ?>" 
-                                                   <?php checked(in_array($role->role_name, $allowed_roles)); ?>>
-                                            <?php echo esc_html($role->role_display_name); ?>
-                                        </label><br>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
                             </fieldset>
                         </td>
                     </tr>
@@ -514,24 +500,108 @@ class SFM_Admin {
                     
                     <tr>
                         <th scope="row">
-                            <label for="capabilities">Capabilities</label>
+                            <label>Capabilities</label>
                         </th>
                         <td>
-                            <fieldset>
-                                <legend class="screen-reader-text">Capabilities</legend>
-                                <?php foreach ($available_capabilities as $cap => $cap_name): ?>
-                                    <label>
-                                        <input type="checkbox" name="capabilities[]" value="<?php echo esc_attr($cap); ?>">
-                                        <?php echo esc_html($cap_name); ?>
-                                    </label><br>
-                                <?php endforeach; ?>
-                            </fieldset>
+                            <p><strong>Custom roles have limited capabilities:</strong></p>
+                            <ul>
+                                <li>✅ View Secure Files</li>
+                                <li>✅ Download Files</li>
+                                <li>❌ Upload Files (Admin only)</li>
+                                <li>❌ Manage Files (Admin only)</li>
+                                <li>❌ Manage Roles (Admin only)</li>
+                            </ul>
+                            <p class="description">Custom roles can only view and download files assigned to them.</p>
                         </td>
                     </tr>
                 </table>
                 
                 <p class="submit">
                     <input type="submit" class="button button-primary" value="Create Role">
+                    <a href="<?php echo admin_url('admin.php?page=secure-files-roles'); ?>" class="button">
+                        Cancel
+                    </a>
+                </p>
+            </form>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Render edit role page
+     */
+    private function render_edit_role_page() {
+        $role_id = intval($_GET['role_id']);
+        
+        // Get role info
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'sfm_custom_roles';
+        $role = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE id = %d",
+            $role_id
+        ));
+        
+        if (!$role) {
+            wp_die('Role not found');
+        }
+        
+        ?>
+        <div class="wrap">
+            <h1>Edit Role: <?php echo esc_html($role->role_display_name); ?></h1>
+            
+            <form id="sfm-update-role-form">
+                <?php wp_nonce_field('sfm_admin_nonce', 'sfm_nonce'); ?>
+                <input type="hidden" name="role_id" value="<?php echo $role->id; ?>">
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">Role Name</th>
+                        <td>
+                            <strong><?php echo esc_html($role->role_name); ?></strong>
+                            <p class="description">Role name cannot be changed</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="role_display_name">Display Name</label>
+                        </th>
+                        <td>
+                            <input type="text" id="role_display_name" name="role_display_name" value="<?php echo esc_attr($role->role_display_name); ?>" required>
+                            <p class="description">Human-readable role name</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label for="role_description">Description</label>
+                        </th>
+                        <td>
+                            <textarea id="role_description" name="role_description" rows="3" cols="50"><?php echo esc_textarea($role->role_description); ?></textarea>
+                            <p class="description">Optional description of the role</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">
+                            <label>Capabilities</label>
+                        </th>
+                        <td>
+                            <p><strong>Custom roles have limited capabilities:</strong></p>
+                            <ul>
+                                <li>✅ View Secure Files</li>
+                                <li>✅ Download Files</li>
+                                <li>❌ Upload Files (Admin only)</li>
+                                <li>❌ Manage Files (Admin only)</li>
+                                <li>❌ Manage Roles (Admin only)</li>
+                            </ul>
+                            <p class="description">Custom roles can only view and download files assigned to them.</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="submit">
+                    <input type="submit" class="button button-primary" value="Update Role">
                     <a href="<?php echo admin_url('admin.php?page=secure-files-roles'); ?>" class="button">
                         Cancel
                     </a>
@@ -634,5 +704,13 @@ class SFM_Admin {
         update_option('sfm_frontend_page_id', intval($_POST['frontend_page_id']));
         
         echo '<div class="notice notice-success"><p>Settings saved successfully!</p></div>';
+    }
+    
+    /**
+     * Get file view URL
+     */
+    private function get_file_view_url($file) {
+        $frontend = SFM_Core::instance()->get_frontend();
+        return $frontend->get_file_view_url($file);
     }
 }
