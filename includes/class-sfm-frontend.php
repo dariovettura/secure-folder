@@ -29,19 +29,33 @@ class SFM_Frontend {
         add_action('wp_ajax_sfm_download_file', array($this, 'handle_file_download'));
         add_action('wp_ajax_nopriv_sfm_download_file', array($this, 'handle_file_download'));
         
-        // Add rewrite rule for secure file access
-        add_action('init', array($this, 'add_rewrite_rules'));
-        add_filter('query_vars', array($this, 'add_query_vars'));
-        add_action('template_redirect', array($this, 'handle_secure_file_access'));
+        // Add endpoint for serving secure files
+        add_action('wp_ajax_sfm_serve_file', array($this, 'handle_serve_file'));
+        add_action('wp_ajax_nopriv_sfm_serve_file', array($this, 'handle_serve_file'));
         
         // Add custom page template
         add_filter('page_template', array($this, 'custom_page_template'));
+        
+        // Enqueue frontend styles
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_styles'));
         
         // Add custom query vars
         add_filter('query_vars', array($this, 'add_query_vars'));
         
         // Handle custom page requests
         add_action('template_redirect', array($this, 'handle_custom_page'));
+    }
+    
+    /**
+     * Enqueue frontend styles
+     */
+    public function enqueue_frontend_styles() {
+        wp_enqueue_style(
+            'sfm-frontend',
+            SFM_PLUGIN_URL . 'assets/css/frontend.css',
+            array(),
+            SFM_PLUGIN_VERSION
+        );
     }
     
     /**
@@ -58,19 +72,24 @@ class SFM_Frontend {
             'limit' => 20,
             'show_description' => 'true',
             'show_download_count' => 'true',
-            'show_upload_date' => 'true'
+            'show_upload_date' => 'true',
+            'show_view_button' => 'true',
+            'show_download_button' => 'true',
+            'layout' => 'grid', // grid, list
+            'title' => 'Secure Files',
+            'empty_message' => 'No files available for your access level.'
         ), $atts);
         
         $files = $this->get_user_accessible_files($atts);
         
         if (empty($files)) {
-            return '<p>No files available for your access level.</p>';
+            return '<p>' . esc_html($atts['empty_message']) . '</p>';
         }
         
         ob_start();
         ?>
-        <div class="sfm-frontend-files">
-            <h3>Secure Files</h3>
+        <div class="sfm-frontend-files sfm-layout-<?php echo esc_attr($atts['layout']); ?>">
+            <h3><?php echo esc_html($atts['title']); ?></h3>
             <div class="sfm-files-grid">
                 <?php foreach ($files as $file): ?>
                     <div class="sfm-file-item" data-file-id="<?php echo esc_attr($file->id); ?>">
@@ -98,9 +117,18 @@ class SFM_Frontend {
                                 </span>
                             </div>
                             <div class="sfm-file-actions">
-                                <button class="sfm-download-btn" data-file-id="<?php echo esc_attr($file->id); ?>">
-                                    Download
-                                </button>
+                                <?php if ($atts['show_view_button'] === 'true'): ?>
+                                    <a href="<?php echo esc_url($this->get_file_view_url($file)); ?>" 
+                                       class="sfm-view-btn" 
+                                       target="_blank">
+                                        View
+                                    </a>
+                                <?php endif; ?>
+                                <?php if ($atts['show_download_button'] === 'true'): ?>
+                                    <button class="sfm-download-btn" data-file-id="<?php echo esc_attr($file->id); ?>">
+                                        Download
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -108,78 +136,24 @@ class SFM_Frontend {
             </div>
         </div>
         
-        <style>
-        .sfm-frontend-files {
-            max-width: 100%;
-        }
-        
-        .sfm-files-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .sfm-file-item {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: box-shadow 0.3s ease;
-        }
-        
-        .sfm-file-item:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        
-        .sfm-file-icon {
-            font-size: 48px;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-        
-        .sfm-file-name {
-            margin: 0 0 10px 0;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        
-        .sfm-file-description {
-            margin: 0 0 15px 0;
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .sfm-file-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            font-size: 12px;
-            color: #888;
-        }
-        
-        .sfm-file-meta span {
-            background: #f5f5f5;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-        
-        .sfm-download-btn {
-            background: #0073aa;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .sfm-download-btn:hover {
-            background: #005a87;
-        }
-        </style>
+        <script>
+        jQuery(document).ready(function($) {
+            $('.sfm-download-btn').on('click', function(e) {
+                e.preventDefault();
+                var fileId = $(this).data('file-id');
+                var nonce = '<?php echo wp_create_nonce('sfm_nonce'); ?>';
+                
+                // Create form and submit
+                var form = $('<form method="post" action="<?php echo admin_url('admin-ajax.php'); ?>">');
+                form.append($('<input type="hidden" name="action" value="sfm_download_file">'));
+                form.append($('<input type="hidden" name="file_id" value="' + fileId + '">'));
+                form.append($('<input type="hidden" name="nonce" value="' + nonce + '">'));
+                $('body').append(form);
+                form.submit();
+                form.remove();
+            });
+        });
+        </script>
         <?php
         
         return ob_get_clean();
@@ -313,35 +287,21 @@ class SFM_Frontend {
     }
     
     /**
-     * Add rewrite rules for secure file access
+     * Handle secure file serving via AJAX endpoint
      */
-    public function add_rewrite_rules() {
-        add_rewrite_rule(
-            '^secure-files/([^/]+)/?$',
-            'index.php?sfm_secure_file=1&sfm_file_name=$matches[1]',
-            'top'
-        );
-    }
-    
-    /**
-     * Add query vars for secure file access
-     */
-    public function add_query_vars($vars) {
-        $vars[] = 'sfm_secure_file';
-        $vars[] = 'sfm_file_name';
-        $vars[] = 'sfm_download';
-        return $vars;
-    }
-    
-    /**
-     * Handle secure file access
-     */
-    public function handle_secure_file_access() {
-        if (get_query_var('sfm_secure_file')) {
-            $file_name = get_query_var('sfm_file_name');
-            $this->serve_secure_file($file_name);
-            exit;
+    public function handle_serve_file() {
+        // Check if user is logged in
+        if (!is_user_logged_in()) {
+            wp_die('Access denied - please log in', 'Access Denied', array('response' => 403));
         }
+        
+        // Get file name from request
+        $file_name = sanitize_file_name($_GET['file'] ?? '');
+        if (empty($file_name)) {
+            wp_die('File not specified', 'Bad Request', array('response' => 400));
+        }
+        
+        $this->serve_secure_file($file_name);
     }
     
     /**
@@ -349,11 +309,6 @@ class SFM_Frontend {
      */
     private function serve_secure_file($file_name) {
         global $wpdb;
-        
-        // Check if user is logged in
-        if (!is_user_logged_in()) {
-            wp_die('Access denied - please log in', 'Access Denied', array('response' => 403));
-        }
         
         // Get file from database
         $table_name = $wpdb->prefix . 'sfm_files';
@@ -378,7 +333,7 @@ class SFM_Frontend {
             wp_die('File not found on disk', 'File Not Found', array('response' => 404));
         }
         
-        // Set headers for file download
+        // Set headers for file viewing
         header('Content-Type: ' . $file->mime_type);
         header('Content-Disposition: inline; filename="' . $file->original_name . '"');
         header('Content-Length: ' . filesize($file_path));
@@ -394,7 +349,10 @@ class SFM_Frontend {
      * Generate secure file URL for viewing
      */
     public function get_file_view_url($file) {
-        return home_url('/secure-files/' . $file->filename);
+        return add_query_arg(array(
+            'action' => 'sfm_serve_file',
+            'file' => $file->filename
+        ), admin_url('admin-ajax.php'));
     }
     
     /**

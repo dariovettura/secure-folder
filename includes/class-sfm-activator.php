@@ -30,8 +30,8 @@ class SFM_Activator {
         // Set default options
         self::set_default_options();
         
-        // Flush rewrite rules
-        flush_rewrite_rules();
+        // Force update .htaccess for complete blocking
+        self::update_htaccess();
     }
     
     /**
@@ -53,17 +53,29 @@ class SFM_Activator {
      * Create .htaccess for protected folder
      */
     private static function create_htaccess() {
-        $htaccess_content = "# Secure Files Manager - Protected Folder\n";
-        $htaccess_content .= "RewriteEngine On\n";
-        $htaccess_content .= "RewriteCond %{HTTP_COOKIE} !^.*wordpress_logged_in.*$ [NC]\n";
-        $htaccess_content .= "RewriteRule . - [R=403,L]\n";
-        $htaccess_content .= "\n# Deny direct access to PHP files\n";
+        $htaccess_content = "# Secure Files Manager - Complete Access Block\n";
+        $htaccess_content .= "# Block ALL direct access to files in this folder\n";
+        $htaccess_content .= "Order Deny,Allow\n";
+        $htaccess_content .= "Deny from all\n";
+        $htaccess_content .= "\n# Block specific file types\n";
+        $htaccess_content .= "<FilesMatch \"\\.(pdf|doc|docx|txt|jpg|jpeg|png|gif|zip|rar)$\">\n";
+        $htaccess_content .= "Order Deny,Allow\n";
+        $htaccess_content .= "Deny from all\n";
+        $htaccess_content .= "</FilesMatch>\n";
+        $htaccess_content .= "\n# Block PHP files\n";
         $htaccess_content .= "<Files \"*.php\">\n";
         $htaccess_content .= "Order Deny,Allow\n";
         $htaccess_content .= "Deny from all\n";
         $htaccess_content .= "</Files>\n";
         
         file_put_contents(SFM_PROTECTED_PATH . '/.htaccess', $htaccess_content);
+    }
+    
+    /**
+     * Update .htaccess for complete blocking
+     */
+    public static function update_htaccess() {
+        self::create_htaccess();
     }
     
     /**

@@ -686,7 +686,198 @@ class SFM_Admin {
                     <input type="submit" name="submit" class="button button-primary" value="Save Settings">
                 </p>
             </form>
+            
+            <!-- Shortcode Section -->
+            <div class="sfm-shortcode-section" style="margin-top: 40px;">
+                <h2>Shortcode Usage</h2>
+                <p>Use the shortcode below to display secure files on any page or post. Users will only see files assigned to their role.</p>
+                
+                <div class="sfm-shortcode-examples">
+                    <h3>Basic Usage</h3>
+                    <div class="sfm-code-block">
+                        <code id="basic-shortcode">[secure_files]</code>
+                        <button class="button button-small sfm-copy-btn" data-target="basic-shortcode">Copy</button>
+                    </div>
+                    
+                    <h3>Advanced Usage with Options</h3>
+                    <div class="sfm-code-block">
+                        <code id="advanced-shortcode">[secure_files title="My Files" layout="grid" limit="10" show_description="true" show_download_count="true" show_upload_date="true" show_view_button="true" show_download_button="true"]</code>
+                        <button class="button button-small sfm-copy-btn" data-target="advanced-shortcode">Copy</button>
+                    </div>
+                    
+                    <h3>List Layout</h3>
+                    <div class="sfm-code-block">
+                        <code id="list-shortcode">[secure_files layout="list" title="File List" limit="20"]</code>
+                        <button class="button button-small sfm-copy-btn" data-target="list-shortcode">Copy</button>
+                    </div>
+                    
+                    <h3>View Only (No Download)</h3>
+                    <div class="sfm-code-block">
+                        <code id="view-only-shortcode">[secure_files show_download_button="false" title="Preview Files"]</code>
+                        <button class="button button-small sfm-copy-btn" data-target="view-only-shortcode">Copy</button>
+                    </div>
+                    
+                    <h3>Download Only (No View)</h3>
+                    <div class="sfm-code-block">
+                        <code id="download-only-shortcode">[secure_files show_view_button="false" title="Download Files"]</code>
+                        <button class="button button-small sfm-copy-btn" data-target="download-only-shortcode">Copy</button>
+                    </div>
+                </div>
+                
+                <div class="sfm-shortcode-options">
+                    <h3>Available Options</h3>
+                    <table class="widefat">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Default Value</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>title</code></td>
+                                <td>"Secure Files"</td>
+                                <td>Title displayed above the file list</td>
+                            </tr>
+                            <tr>
+                                <td><code>layout</code></td>
+                                <td>"grid"</td>
+                                <td>Layout style: "grid" or "list"</td>
+                            </tr>
+                            <tr>
+                                <td><code>limit</code></td>
+                                <td>20</td>
+                                <td>Maximum number of files to display</td>
+                            </tr>
+                            <tr>
+                                <td><code>show_description</code></td>
+                                <td>"true"</td>
+                                <td>Show file description: "true" or "false"</td>
+                            </tr>
+                            <tr>
+                                <td><code>show_download_count</code></td>
+                                <td>"true"</td>
+                                <td>Show download count: "true" or "false"</td>
+                            </tr>
+                            <tr>
+                                <td><code>show_upload_date</code></td>
+                                <td>"true"</td>
+                                <td>Show upload date: "true" or "false"</td>
+                            </tr>
+                            <tr>
+                                <td><code>show_view_button</code></td>
+                                <td>"true"</td>
+                                <td>Show view button: "true" or "false"</td>
+                            </tr>
+                            <tr>
+                                <td><code>show_download_button</code></td>
+                                <td>"true"</td>
+                                <td>Show download button: "true" or "false"</td>
+                            </tr>
+                            <tr>
+                                <td><code>empty_message</code></td>
+                                <td>"No files available..."</td>
+                                <td>Message shown when no files are available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+        
+        <style>
+        .sfm-shortcode-section {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 20px;
+        }
+        
+        .sfm-shortcode-examples h3 {
+            margin-top: 25px;
+            margin-bottom: 10px;
+            color: #23282d;
+        }
+        
+        .sfm-code-block {
+            background: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .sfm-code-block code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #333;
+            flex: 1;
+            word-break: break-all;
+        }
+        
+        .sfm-copy-btn {
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+        
+        .sfm-shortcode-options {
+            margin-top: 30px;
+        }
+        
+        .sfm-shortcode-options h3 {
+            margin-bottom: 15px;
+            color: #23282d;
+        }
+        
+        .sfm-shortcode-options table {
+            margin-top: 10px;
+        }
+        
+        .sfm-shortcode-options th {
+            background: #f9f9f9;
+            font-weight: 600;
+        }
+        
+        .sfm-shortcode-options code {
+            background: #f1f1f1;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        </style>
+        
+        <script>
+        jQuery(document).ready(function($) {
+            $('.sfm-copy-btn').on('click', function() {
+                var target = $(this).data('target');
+                var code = $('#' + target).text();
+                
+                // Create temporary textarea
+                var temp = $('<textarea>');
+                $('body').append(temp);
+                temp.val(code).select();
+                document.execCommand('copy');
+                temp.remove();
+                
+                // Show feedback
+                var btn = $(this);
+                var originalText = btn.text();
+                btn.text('Copied!').addClass('button-primary');
+                
+                setTimeout(function() {
+                    btn.text(originalText).removeClass('button-primary');
+                }, 2000);
+            });
+        });
+        </script>
         <?php
     }
     

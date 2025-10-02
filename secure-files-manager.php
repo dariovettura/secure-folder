@@ -37,6 +37,13 @@ require_once SFM_PLUGIN_PATH . 'admin/class-sfm-admin.php';
 register_activation_hook(__FILE__, array('SFM_Activator', 'activate'));
 register_deactivation_hook(__FILE__, array('SFM_Deactivator', 'deactivate'));
 
+// Force update .htaccess on activation
+add_action('activated_plugin', function($plugin) {
+    if ($plugin === plugin_basename(__FILE__)) {
+        SFM_Activator::update_htaccess();
+    }
+});
+
 // Initialize the plugin
 function sfm_init() {
     static $initialized = false;
