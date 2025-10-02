@@ -735,6 +735,18 @@ class SFM_Admin {
                         <code id="download-only-shortcode">[secure_files show_view_button="false" title="Download Files"]</code>
                         <button class="button button-small sfm-copy-btn" data-target="download-only-shortcode">Copy</button>
                     </div>
+                    
+                    <h3>Custom Login Form</h3>
+                    <div class="sfm-code-block">
+                        <code id="login-shortcode">[secure_login]</code>
+                        <button class="button button-small sfm-copy-btn" data-target="login-shortcode">Copy</button>
+                    </div>
+                    
+                    <h3>Custom Login with Options</h3>
+                    <div class="sfm-code-block">
+                        <code id="login-advanced-shortcode">[secure_login title="Client Login" button_text="Sign In" logout_text="Sign Out" redirect_after_login="/files" redirect_after_logout="/"]</code>
+                        <button class="button button-small sfm-copy-btn" data-target="login-advanced-shortcode">Copy</button>
+                    </div>
                 </div>
                 
                 <div class="sfm-shortcode-options">
@@ -792,6 +804,49 @@ class SFM_Admin {
                                 <td><code>empty_message</code></td>
                                 <td>"No files available..."</td>
                                 <td>Message shown when no files are available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3>Login Form Options</h3>
+                    <table class="widefat">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Default Value</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>title</code></td>
+                                <td>"Secure Login"</td>
+                                <td>Title displayed above the login form</td>
+                            </tr>
+                            <tr>
+                                <td><code>show_title</code></td>
+                                <td>"true"</td>
+                                <td>Show/hide the title: "true" or "false"</td>
+                            </tr>
+                            <tr>
+                                <td><code>button_text</code></td>
+                                <td>"Login"</td>
+                                <td>Text for the login button</td>
+                            </tr>
+                            <tr>
+                                <td><code>logout_text</code></td>
+                                <td>"Logout"</td>
+                                <td>Text for the logout button</td>
+                            </tr>
+                            <tr>
+                                <td><code>redirect_after_login</code></td>
+                                <td>""</td>
+                                <td>URL to redirect after successful login</td>
+                            </tr>
+                            <tr>
+                                <td><code>redirect_after_logout</code></td>
+                                <td>""</td>
+                                <td>URL to redirect after logout</td>
                             </tr>
                         </tbody>
                     </table>
@@ -885,9 +940,7 @@ class SFM_Admin {
                 var originalText = btn.text();
                 btn.text('Copied!').addClass('button-primary');
                 
-                setTimeout(function() {
-                    btn.text(originalText).removeClass('button-primary');
-                }, 2000);
+                // Keep the "Copied!" state permanently
             });
         });
         </script>

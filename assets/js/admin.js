@@ -23,10 +23,8 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     showMessage('File uploaded successfully!', 'success');
-                    // Redirect to files list
-                    setTimeout(function() {
-                        window.location.href = 'admin.php?page=secure-files-manager';
-                    }, 1500);
+                    // Redirect to files list immediately
+                    window.location.href = 'admin.php?page=secure-files-manager';
                 } else {
                     showMessage(response.data || 'Upload failed', 'error');
                 }
@@ -126,10 +124,8 @@ jQuery(document).ready(function($) {
             success: function(response) {
                 if (response.success) {
                     showMessage('Role created successfully!', 'success');
-                    // Redirect to roles list
-                    setTimeout(function() {
-                        window.location.href = 'admin.php?page=secure-files-roles';
-                    }, 1500);
+                    // Redirect to roles list immediately
+                    window.location.href = 'admin.php?page=secure-files-roles';
                 } else {
                     showMessage(response.data || 'Role creation failed', 'error');
                 }
@@ -307,12 +303,7 @@ jQuery(document).ready(function($) {
         // Add new message
         $('.wrap h1').after(messageHtml);
         
-        // Auto-hide after 5 seconds
-        setTimeout(function() {
-            $('.sfm-message').fadeOut(300, function() {
-                $(this).remove();
-            });
-        }, 5000);
+        // Keep messages visible permanently
     }
     
     // Initialize tooltips

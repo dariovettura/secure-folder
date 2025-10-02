@@ -300,12 +300,7 @@ jQuery(document).ready(function($) {
         // Add new message
         $('.sfm-frontend-files').prepend(messageHtml);
         
-        // Auto-hide after 5 seconds
-        setTimeout(function() {
-            $('.sfm-message').fadeOut(300, function() {
-                $(this).remove();
-            });
-        }, 5000);
+        // Keep messages visible permanently
     }
     
     // Initialize file type icons
