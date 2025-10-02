@@ -33,17 +33,9 @@ class SFM_Frontend {
         add_action('wp_ajax_sfm_serve_file', array($this, 'handle_serve_file'));
         add_action('wp_ajax_nopriv_sfm_serve_file', array($this, 'handle_serve_file'));
         
-        // Add custom page template
-        add_filter('page_template', array($this, 'custom_page_template'));
         
         // Enqueue frontend styles
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_styles'));
-        
-        // Add custom query vars
-        add_filter('query_vars', array($this, 'add_query_vars'));
-        
-        // Handle custom page requests
-        add_action('template_redirect', array($this, 'handle_custom_page'));
     }
     
     /**
@@ -367,98 +359,6 @@ class SFM_Frontend {
     }
     
     
-    /**
-     * Handle custom page requests
-     */
-    public function handle_custom_page() {
-        if (get_query_var('sfm_download')) {
-            $this->handle_download_request();
-        }
-    }
     
-    /**
-     * Handle download request
-     */
-    private function handle_download_request() {
-        $file_id = intval(get_query_var('sfm_download'));
-        $nonce = sanitize_text_field($_GET['nonce']);
-        
-        // Verify nonce
-        if (!wp_verify_nonce($nonce, 'sfm_download_' . $file_id)) {
-            wp_die('Invalid download link');
-        }
-        
-        // Check if user is logged in
-        if (!is_user_logged_in()) {
-            wp_die('You must be logged in to download files');
-        }
-        
-        // Get file info
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'sfm_files';
-        $file = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table_name WHERE id = %d",
-            $file_id
-        ));
-        
-        if (!$file) {
-            wp_die('File not found');
-        }
-        
-        // Check access permissions
-        if (!$this->user_can_access_file($file)) {
-            wp_die('Access denied');
-        }
-        
-        // Update download count
-        $wpdb->query($wpdb->prepare(
-            "UPDATE $table_name SET download_count = download_count + 1 WHERE id = %d",
-            $file_id
-        ));
-        
-        // Serve file
-        header('Content-Type: ' . $file->mime_type);
-        header('Content-Disposition: attachment; filename="' . $file->original_name . '"');
-        header('Content-Length: ' . $file->file_size);
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Expires: 0');
-        
-        readfile($file->file_path);
-        exit;
-    }
     
-    /**
-     * Custom page template
-     */
-    public function custom_page_template($template) {
-        if (is_page('secure-files')) {
-            $custom_template = SFM_PLUGIN_PATH . 'templates/page-secure-files.php';
-            if (file_exists($custom_template)) {
-                return $custom_template;
-            }
-        }
-        return $template;
-    }
-    
-    /**
-     * Create secure files page
-     */
-    public function create_secure_files_page() {
-        // Check if page already exists
-        $page = get_page_by_path('secure-files');
-        if ($page) {
-            return $page->ID;
-        }
-        
-        // Create page
-        $page_id = wp_insert_post(array(
-            'post_title' => 'Secure Files',
-            'post_content' => '[secure_files]',
-            'post_status' => 'publish',
-            'post_type' => 'page',
-            'post_name' => 'secure-files'
-        ));
-        
-        return $page_id;
-    }
 }
