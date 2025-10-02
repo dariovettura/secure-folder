@@ -196,8 +196,8 @@ class SFM_Frontend {
             $user_roles = array_merge($user_roles, $user_custom_roles);
         }
         
-        // Admin can see all files
-        if (current_user_can('sfm_manage_files')) {
+        // Admin can see all files (only real administrators, not custom roles)
+        if (current_user_can('sfm_manage_files') || (current_user_can('manage_options') && in_array('administrator', $user_roles))) {
             $query = "SELECT * FROM $table_name ORDER BY uploaded_at DESC";
             if (!empty($atts['limit'])) {
                 $query .= " LIMIT " . intval($atts['limit']);
@@ -288,9 +288,10 @@ class SFM_Frontend {
      */
     private function user_can_access_file($file) {
         $user = wp_get_current_user();
+        $user_roles = $user->roles;
         
-        // Admin can access all files
-        if (current_user_can('sfm_manage_files')) {
+        // Admin can access all files (only real administrators, not custom roles)
+        if (current_user_can('sfm_manage_files') || (current_user_can('manage_options') && in_array('administrator', $user_roles))) {
             return true;
         }
         
@@ -299,7 +300,7 @@ class SFM_Frontend {
         
         if (empty($allowed_roles)) {
             // If no roles specified, only admin can access
-            return current_user_can('sfm_manage_files');
+            return current_user_can('sfm_manage_files') || (current_user_can('manage_options') && in_array('administrator', $user_roles));
         }
         
         // Check if user has one of the allowed roles
@@ -309,6 +310,7 @@ class SFM_Frontend {
             $user_roles = array_merge($user_roles, $user_custom_roles);
         }
         
+        // Check if user has any of the allowed roles
         foreach ($allowed_roles as $role) {
             if (in_array($role, $user_roles)) {
                 return true;

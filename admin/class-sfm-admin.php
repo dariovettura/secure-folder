@@ -35,7 +35,7 @@ class SFM_Admin {
         add_menu_page(
             'Secure Files Manager',
             'Secure Files',
-            'sfm_manage_files',
+            'manage_options',
             'secure-files-manager',
             array($this, 'admin_page_files'),
             'dashicons-shield-alt',
@@ -47,7 +47,7 @@ class SFM_Admin {
             'secure-files-manager',
             'Files',
             'Files',
-            'sfm_manage_files',
+            'manage_options',
             'secure-files-manager',
             array($this, 'admin_page_files')
         );
@@ -57,7 +57,7 @@ class SFM_Admin {
             'secure-files-manager',
             'Custom Roles',
             'Custom Roles',
-            'sfm_manage_roles',
+            'manage_options',
             'secure-files-roles',
             array($this, 'admin_page_roles')
         );
@@ -67,7 +67,7 @@ class SFM_Admin {
             'secure-files-manager',
             'Settings',
             'Settings',
-            'sfm_manage_files',
+            'manage_options',
             'secure-files-settings',
             array($this, 'admin_page_settings')
         );
@@ -126,7 +126,7 @@ class SFM_Admin {
      * Render files list
      */
     private function render_files_list() {
-        $file_manager = new SFM_File_Manager();
+        $file_manager = SFM_Core::instance()->get_file_manager();
         $files = $file_manager->get_files(array('limit' => 50));
         
         ?>
@@ -206,7 +206,7 @@ class SFM_Admin {
      * Render upload page
      */
     private function render_upload_page() {
-        $role_manager = new SFM_Role_Manager();
+        $role_manager = SFM_Core::instance()->get_role_manager();
         $custom_roles = $role_manager->get_custom_roles();
         $wp_roles = wp_roles()->get_names();
         
@@ -245,16 +245,10 @@ class SFM_Admin {
                             <fieldset>
                                 <legend class="screen-reader-text">Allowed Roles</legend>
                                 
-                                <h4>WordPress Roles:</h4>
-                                <?php foreach ($wp_roles as $role_name => $role_display_name): ?>
-                                    <label>
-                                        <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role_name); ?>">
-                                        <?php echo esc_html($role_display_name); ?>
-                                    </label><br>
-                                <?php endforeach; ?>
+                              
                                 
                                 <?php if (!empty($custom_roles)): ?>
-                                    <h4>Custom Roles:</h4>
+                                    <h4>Roles:</h4>
                                     <?php foreach ($custom_roles as $role): ?>
                                         <label>
                                             <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role->role_name); ?>">
@@ -287,7 +281,7 @@ class SFM_Admin {
      */
     private function render_edit_page() {
         $file_id = intval($_GET['file_id']);
-        $file_manager = new SFM_File_Manager();
+        $file_manager = SFM_Core::instance()->get_file_manager();
         
         // Get file info
         global $wpdb;
@@ -301,7 +295,7 @@ class SFM_Admin {
             wp_die('File not found');
         }
         
-        $role_manager = new SFM_Role_Manager();
+        $role_manager = SFM_Core::instance()->get_role_manager();
         $custom_roles = $role_manager->get_custom_roles();
         $wp_roles = wp_roles()->get_names();
         $allowed_roles = unserialize($file->allowed_roles);
@@ -408,7 +402,7 @@ class SFM_Admin {
      * Render roles list
      */
     private function render_roles_list() {
-        $role_manager = new SFM_Role_Manager();
+        $role_manager = SFM_Core::instance()->get_role_manager();
         $custom_roles = $role_manager->get_custom_roles();
         
         ?>

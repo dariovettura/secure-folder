@@ -49,7 +49,7 @@ class SFM_Role_Manager {
         }
         
         // Check permissions
-        if (!current_user_can('sfm_manage_roles')) {
+        if (!current_user_can('sfm_manage_roles') && !current_user_can('manage_options')) {
             wp_die('Insufficient permissions');
         }
         
@@ -137,7 +137,7 @@ class SFM_Role_Manager {
         }
         
         // Check permissions
-        if (!current_user_can('sfm_manage_roles')) {
+        if (!current_user_can('sfm_manage_roles') && !current_user_can('manage_options')) {
             wp_die('Insufficient permissions');
         }
         
@@ -216,7 +216,7 @@ class SFM_Role_Manager {
         }
         
         // Check permissions
-        if (!current_user_can('sfm_manage_roles')) {
+        if (!current_user_can('sfm_manage_roles') && !current_user_can('manage_options')) {
             wp_die('Insufficient permissions');
         }
         

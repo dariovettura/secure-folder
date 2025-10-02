@@ -22,6 +22,14 @@ class SFM_Core {
     protected static $_instance = null;
     
     /**
+     * Plugin components
+     */
+    public $file_manager;
+    public $role_manager;
+    public $frontend;
+    public $admin;
+    
+    /**
      * Main SFM_Core Instance
      */
     public static function instance() {
@@ -54,6 +62,9 @@ class SFM_Core {
         // Load text domain
         $this->load_plugin_textdomain();
         
+        // Ensure capabilities are added
+        $this->ensure_capabilities();
+        
         // Initialize components
         $this->init_components();
     }
@@ -70,21 +81,49 @@ class SFM_Core {
     }
     
     /**
+     * Ensure capabilities are added to administrator role
+     */
+    private function ensure_capabilities() {
+        $admin_role = get_role('administrator');
+        if ($admin_role) {
+            $capabilities = array(
+                'sfm_manage_files',
+                'sfm_manage_roles',
+                'sfm_view_secure_files',
+                'sfm_upload_files',
+                'sfm_download_files'
+            );
+            
+            foreach ($capabilities as $cap) {
+                if (!$admin_role->has_cap($cap)) {
+                    $admin_role->add_cap($cap);
+                }
+            }
+        }
+    }
+    
+    /**
      * Initialize plugin components
      */
     private function init_components() {
         // Initialize file manager
-        new SFM_File_Manager();
+        if (!$this->file_manager) {
+            $this->file_manager = new SFM_File_Manager();
+        }
         
         // Initialize role manager
-        new SFM_Role_Manager();
+        if (!$this->role_manager) {
+            $this->role_manager = new SFM_Role_Manager();
+        }
         
         // Initialize frontend
-        new SFM_Frontend();
+        if (!$this->frontend) {
+            $this->frontend = new SFM_Frontend();
+        }
         
         // Initialize admin (only in admin area)
-        if (is_admin()) {
-            new SFM_Admin();
+        if (is_admin() && !$this->admin) {
+            $this->admin = new SFM_Admin();
         }
     }
     
@@ -161,5 +200,33 @@ class SFM_Core {
      */
     public function run() {
         $this->init();
+    }
+    
+    /**
+     * Get file manager instance
+     */
+    public function get_file_manager() {
+        return $this->file_manager;
+    }
+    
+    /**
+     * Get role manager instance
+     */
+    public function get_role_manager() {
+        return $this->role_manager;
+    }
+    
+    /**
+     * Get frontend instance
+     */
+    public function get_frontend() {
+        return $this->frontend;
+    }
+    
+    /**
+     * Get admin instance
+     */
+    public function get_admin() {
+        return $this->admin;
     }
 }

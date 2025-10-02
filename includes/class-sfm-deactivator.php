@@ -57,4 +57,5 @@ class SFM_Deactivator {
         wp_clear_scheduled_hook('sfm_cleanup_old_files');
         wp_clear_scheduled_hook('sfm_send_notifications');
     }
+    
 }

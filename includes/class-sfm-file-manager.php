@@ -52,7 +52,7 @@ class SFM_File_Manager {
         }
         
         // Check permissions
-        if (!current_user_can('sfm_upload_files')) {
+        if (!current_user_can('sfm_upload_files') && !current_user_can('manage_options')) {
             wp_die('Insufficient permissions');
         }
         
@@ -191,7 +191,7 @@ class SFM_File_Manager {
         }
         
         // Check permissions
-        if (!current_user_can('sfm_manage_files')) {
+        if (!current_user_can('sfm_manage_files') && !current_user_can('manage_options')) {
             wp_die('Insufficient permissions');
         }
         
@@ -290,8 +290,10 @@ class SFM_File_Manager {
             return false;
         }
         
-        // Admin can access all files
-        if (current_user_can('sfm_manage_files')) {
+        // Admin can access all files (only real administrators, not custom roles)
+        $user = wp_get_current_user();
+        $user_roles = $user->roles;
+        if (current_user_can('sfm_manage_files') || (current_user_can('manage_options') && in_array('administrator', $user_roles))) {
             return true;
         }
         
@@ -300,12 +302,14 @@ class SFM_File_Manager {
         
         if (empty($allowed_roles)) {
             // If no roles specified, only admin can access
-            return current_user_can('sfm_manage_files');
+            return current_user_can('sfm_manage_files') || (current_user_can('manage_options') && in_array('administrator', $user_roles));
         }
         
         // Check if user has one of the allowed roles
-        $user = wp_get_current_user();
-        $user_roles = $user->roles;
+        $user_custom_roles = get_user_meta($user->ID, 'sfm_custom_roles', true);
+        if (is_array($user_custom_roles)) {
+            $user_roles = array_merge($user_roles, $user_custom_roles);
+        }
         
         foreach ($allowed_roles as $role) {
             if (in_array($role, $user_roles)) {

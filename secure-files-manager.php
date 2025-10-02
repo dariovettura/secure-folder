@@ -39,18 +39,16 @@ register_deactivation_hook(__FILE__, array('SFM_Deactivator', 'deactivate'));
 
 // Initialize the plugin
 function sfm_init() {
-    $plugin = new SFM_Core();
+    static $initialized = false;
+    
+    if ($initialized) {
+        return;
+    }
+    
+    $initialized = true;
+    $plugin = SFM_Core::instance();
     $plugin->run();
 }
 add_action('plugins_loaded', 'sfm_init');
 
-// Add custom capabilities on plugin activation
-function sfm_add_capabilities() {
-    $role = get_role('administrator');
-    if ($role) {
-        $role->add_cap('sfm_manage_files');
-        $role->add_cap('sfm_manage_roles');
-        $role->add_cap('sfm_view_secure_files');
-    }
-}
-register_activation_hook(__FILE__, 'sfm_add_capabilities');
+// Custom capabilities are handled by SFM_Activator class
